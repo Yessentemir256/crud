@@ -52,3 +52,27 @@ func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 
 	return item, nil
 }
+
+// GetAll возвращает список всех
+func (s *Service) GetAll(ctx context.Context) ([]*Customer, error) {
+	var customers []*Customer
+
+	rows, err := s.db.QueryContext(ctx, `SELECT * FROM customers;`)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		customer := &Customer{}
+		err := rows.Scan(&customer.ID, &customer.Name, &customer.Phone, &customer.Active, &customer.Created)
+		if err != nil {
+			log.Print(err)
+			return nil, ErrInternal
+		}
+		customers = append(customers, customer)
+	}
+
+	return customers, nil
+}
