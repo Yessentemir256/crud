@@ -109,6 +109,7 @@ func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 	return customers, nil
 }
 
+// Save создает или обновляет.
 func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 	if id == 0 {
 		// Создание нового клиента
