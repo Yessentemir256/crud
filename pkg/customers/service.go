@@ -108,3 +108,21 @@ func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 
 	return customers, nil
 }
+
+func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
+	if id == 0 {
+		// Создание нового клиента
+		_, err := s.db.ExecContext(ctx, `INSERT INTO customers (name, phone) VALUES (?, ?);`, name, phone)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Обновление существующего клиента
+		_, err := s.db.ExecContext(ctx, `UPDATE customers SET name = ?, phone = ? WHERE id = ?;`, name, phone, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
