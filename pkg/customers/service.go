@@ -76,3 +76,35 @@ func (s *Service) GetAll(ctx context.Context) ([]*Customer, error) {
 
 	return customers, nil
 }
+
+// GetAllActive возвращает список всех активных
+func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
+	var customers []*Customer
+
+	rows, err := s.db.QueryContext(ctx, `SELECT * FROM customers WHERE active = true;`)
+	if err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		customer := &Customer{}
+		if err := rows.Scan(&customer.ID, &customer.Name, &customer.Phone, &customer.Active, &customer.Created); err != nil {
+			log.Print(err)
+			return nil, ErrInternal
+		}
+		if !customer.Active {
+			// Пропускаем неактивных клиентов
+			continue
+		}
+		customers = append(customers, customer)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Print(err)
+		return nil, ErrInternal
+	}
+
+	return customers, nil
+}
