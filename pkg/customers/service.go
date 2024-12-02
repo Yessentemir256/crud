@@ -14,6 +14,9 @@ var ErrNotFound = errors.New("item not found")
 // ErrInternal возвращается, когда произошла внутренняя ошибка.
 var ErrInternal = errors.New("internal error")
 
+// ErrNotDeleted возвращает, когда удаление не произошло.
+var ErrNotDeleted = errors.New("no rows was deleted")
+
 // Service описывает сервис работы с покупателями.
 type Service struct {
 	db *sql.DB
@@ -109,7 +112,7 @@ func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 	return customers, nil
 }
 
-// Save создает или обновляет.
+// Save создает или обновляет
 func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 	if id == 0 {
 		// Создание нового клиента
@@ -123,6 +126,25 @@ func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// RemoveById удаляет пользователя по ID .
+func (s *Service) RemoveById(ctx context.Context, id int) error {
+	result, err := s.db.ExecContext(ctx, `DELETE FROM customers WHERE id = $1;`, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrNotDeleted
 	}
 
 	return nil
