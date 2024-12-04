@@ -56,7 +56,7 @@ func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	return item, nil
 }
 
-// GetAll возвращает список всех
+// GetAll возвращает список всех.
 func (s *Service) GetAll(ctx context.Context) ([]*Customer, error) {
 	var customers []*Customer
 
@@ -112,7 +112,7 @@ func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 	return customers, nil
 }
 
-// Save создает или обновляет
+// Save создает или обновляет.
 func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 	if id == 0 {
 		// Создание нового клиента
@@ -131,8 +131,8 @@ func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 	return nil
 }
 
-// RemoveById удаляет пользователя по ID .
-func (s *Service) RemoveById(ctx context.Context, id int) error {
+// RemoveById удаляет пользователя по ID.
+func (s *Service) RemoveByID(ctx context.Context, id int) error {
 	result, err := s.db.ExecContext(ctx, `DELETE FROM customers WHERE id = $1;`, id)
 	if err != nil {
 		return err
@@ -148,4 +148,37 @@ func (s *Service) RemoveById(ctx context.Context, id int) error {
 	}
 
 	return nil
+}
+
+// Выставляет статус false по ID .
+func (s *Service) BlockByID(ctx context.Context, id int64) error {
+	item, err := s.ByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.QueryRowContext(ctx, `
+	  Select id, name, phone, active, created FROM customers WHERE id = $1
+	  `, id).Scan(&item.ID, &item.Name, &item.Phone, &item.Active, &item.Created)
+
+	if err != nil {
+		log.Print(err)
+		return ErrInternal
+	}
+
+	if !item.Active {
+		return nil
+	}
+	item.Active = false
+
+	_, err = s.db.ExecContext(ctx, `
+	  UPDATE customers SET active = $1 WHERE id = $2
+	  `, item.Active, item.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
