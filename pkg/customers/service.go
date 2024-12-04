@@ -182,3 +182,36 @@ func (s *Service) BlockByID(ctx context.Context, id int64) error {
 	return nil
 
 }
+
+// Выставляет статус active по ID .
+func (s *Service) UnBlockByID(ctx context.Context, id int64) error {
+	item, err := s.ByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.QueryRowContext(ctx, `
+	  Select id, name, phone, active, created FROM customers WHERE id = $1
+	  `, id).Scan(&item.ID, &item.Name, &item.Phone, &item.Active, &item.Created)
+
+	if err != nil {
+		log.Print(err)
+		return ErrInternal
+	}
+
+	if item.Active {
+		return nil
+	}
+	item.Active = true
+
+	_, err = s.db.ExecContext(ctx, `
+	  UPDATE customers SET active = $1 WHERE id = $2
+	  `, item.Active, item.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
