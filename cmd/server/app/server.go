@@ -27,6 +27,7 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func (s *Server) Init() {
 	s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
 	s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
+	s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
 
 }
 
@@ -89,4 +90,28 @@ func (s *Server) handleSaveCustomer(writer http.ResponseWriter, request *http.Re
 
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte("Customer saved successfully"))
+}
+
+func (s *Server) handleGetAllCustomers(writer http.ResponseWriter, request *http.Request) {
+	// Вызов бизнес-логики
+	customers, err := s.customerSvc.GetAll(request.Context())
+	if err != nil {
+		http.Error(writer, "Failed to get customers", http.StatusInternalServerError)
+		return
+	}
+
+	// Преобразование данных в JSON
+	data, err := json.Marshal(customers)
+	if err != nil {
+		http.Error(writer, "Failed to marshal customers", http.StatusInternalServerError)
+		return
+	}
+
+	// Отправка данных в ответ
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	_, err = writer.Write(data)
+	if err != nil {
+		log.Print(err)
+	}
 }
