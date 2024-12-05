@@ -26,6 +26,8 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 // Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
 	s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
+	s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
+
 }
 
 func (s *Server) handleGetCustomerByID(writer http.ResponseWriter, request *http.Request) {
@@ -56,4 +58,35 @@ func (s *Server) handleGetCustomerByID(writer http.ResponseWriter, request *http
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func (s *Server) handleSaveCustomer(writer http.ResponseWriter, request *http.Request) {
+	if request.Method != http.MethodPost {
+		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	name := request.FormValue("name")
+	phone := request.FormValue("phone")
+	idParam := request.FormValue("id")
+
+	var id int
+	if idParam != "" {
+		var err error
+		id, err = strconv.Atoi(idParam)
+		if err != nil {
+			http.Error(writer, "Invalid ID", http.StatusBadRequest)
+			return
+		}
+	}
+
+	err := s.customerSvc.Save(request.Context(), id, name, phone)
+	if err != nil {
+		log.Print(err)
+		http.Error(writer, "Failed to save customer", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte("Customer saved successfully"))
 }

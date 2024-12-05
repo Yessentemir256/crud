@@ -7,3 +7,6 @@ CREATE TABLE IF NOT EXISTS customers (
 	);
 
 SELECT * FROM customers;
+
+SELECT * FROM customers WHERE id = 1;
+
