@@ -1,6 +1,6 @@
 module github.com/Yessentemir256/crud
 
-go 1.23.1
+go 1.23
 
 require github.com/jackc/pgx/v4 v4.18.3
 
