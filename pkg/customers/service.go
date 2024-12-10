@@ -2,8 +2,9 @@ package customers
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"time"
 )
@@ -19,12 +20,12 @@ var ErrNotDeleted = errors.New("no rows was deleted")
 
 // Service описывает сервис работы с покупателями.
 type Service struct {
-	db *sql.DB
+	pool *pgxpool.Pool
 }
 
 // NewService создает сервис.
-func NewService(db *sql.DB) *Service {
-	return &Service{db: db}
+func NewService(pool *pgxpool.Pool) *Service {
+	return &Service{pool: pool}
 }
 
 // Customer представляет информацию о покупателе.
@@ -40,11 +41,11 @@ type Customer struct {
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
 
-	err := s.db.QueryRowContext(ctx, `
+	err := s.pool.QueryRow(ctx, `
 	  Select id, name, phone, active, created FROM customers WHERE id = $1
 	  `, id).Scan(&item.ID, &item.Name, &item.Phone, &item.Active, &item.Created)
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 
