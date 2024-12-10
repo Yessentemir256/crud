@@ -1,14 +1,15 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"github.com/Yessentemir256/crud/cmd/server/app"
 	"github.com/Yessentemir256/crud/pkg/customers"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -21,24 +22,17 @@ func main() {
 		os.Exit(1)
 	}
 }
-
 func execute(host string, port string, dsn string) (err error) {
-	db, err := sql.Open("pgx", dsn)
+	connectCtx, _ := context.WithTimeout(context.Background(), time.Second*5)
+	pool, err := pgxpool.Connect(connectCtx, dsn)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
-	defer func() {
-		if cerr := db.Close(); cerr != nil {
-			if err == nil {
-				err = cerr
-				return
-			}
-			log.Println(err)
-		}
-	}()
+	defer pool.Close()
 
 	mux := http.NewServeMux()
-	customerSvc := customers.NewService(db)
+	customerSvc := customers.NewService(pool)
 	server := app.NewServer(mux, customerSvc)
 	server.Init()
 
