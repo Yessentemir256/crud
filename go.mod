@@ -2,7 +2,10 @@ module github.com/Yessentemir256/crud
 
 go 1.23
 
-require github.com/jackc/pgx/v4 v4.18.3
+require (
+	github.com/jackc/pgx/v4 v4.18.3
+	go.uber.org/dig v1.18.0
+)
 
 require (
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
