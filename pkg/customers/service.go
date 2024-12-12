@@ -61,7 +61,7 @@ func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 func (s *Service) GetAll(ctx context.Context) ([]*Customer, error) {
 	var customers []*Customer
 
-	rows, err := s.db.QueryContext(ctx, `SELECT * FROM customers;`)
+	rows, err := s.pool.Query(ctx, `SELECT * FROM customers;`)
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
@@ -85,7 +85,7 @@ func (s *Service) GetAll(ctx context.Context) ([]*Customer, error) {
 func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 	var customers []*Customer
 
-	rows, err := s.db.QueryContext(ctx, `SELECT * FROM customers WHERE active = true;`)
+	rows, err := s.pool.Query(ctx, `SELECT * FROM customers WHERE active = true;`)
 	if err != nil {
 		log.Print(err)
 		return nil, ErrInternal
@@ -117,13 +117,13 @@ func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 	if id == 0 {
 		// Создание нового клиента
-		_, err := s.db.ExecContext(ctx, `INSERT INTO customers (name, phone) VALUES ($1, $2);`, name, phone)
+		_, err := s.pool.Exec(ctx, `INSERT INTO customers (name, phone) VALUES ($1, $2);`, name, phone)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Обновление существующего клиента
-		_, err := s.db.ExecContext(ctx, `UPDATE customers SET name = $1, phone = $2 WHERE id = $3;`, name, phone, id)
+		_, err := s.pool.Exec(ctx, `UPDATE customers SET name = $1, phone = $2 WHERE id = $3;`, name, phone, id)
 		if err != nil {
 			return err
 		}
@@ -134,16 +134,12 @@ func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
 
 // RemoveById удаляет пользователя по ID.
 func (s *Service) RemoveByID(ctx context.Context, id int) error {
-	result, err := s.db.ExecContext(ctx, `DELETE FROM customers WHERE id = $1;`, id)
+	result, err := s.pool.Exec(ctx, `DELETE FROM customers WHERE id = $1;`, id)
 	if err != nil {
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
+	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		return ErrNotDeleted
 	}
@@ -158,7 +154,7 @@ func (s *Service) BlockByID(ctx context.Context, id int64) error {
 		return err
 	}
 
-	err = s.db.QueryRowContext(ctx, `
+	err = s.pool.QueryRow(ctx, `
 	  Select id, name, phone, active, created FROM customers WHERE id = $1
 	  `, id).Scan(&item.ID, &item.Name, &item.Phone, &item.Active, &item.Created)
 
@@ -172,7 +168,7 @@ func (s *Service) BlockByID(ctx context.Context, id int64) error {
 	}
 	item.Active = false
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.pool.Exec(ctx, `
 	  UPDATE customers SET active = $1 WHERE id = $2
 	  `, item.Active, item.ID)
 
@@ -191,7 +187,7 @@ func (s *Service) UnBlockByID(ctx context.Context, id int64) error {
 		return err
 	}
 
-	err = s.db.QueryRowContext(ctx, `
+	err = s.pool.QueryRow(ctx, `
 	  Select id, name, phone, active, created FROM customers WHERE id = $1
 	  `, id).Scan(&item.ID, &item.Name, &item.Phone, &item.Active, &item.Created)
 
@@ -205,7 +201,7 @@ func (s *Service) UnBlockByID(ctx context.Context, id int64) error {
 	}
 	item.Active = true
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.pool.Exec(ctx, `
 	  UPDATE customers SET active = $1 WHERE id = $2
 	  `, item.Active, item.ID)
 
