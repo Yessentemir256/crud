@@ -110,4 +110,37 @@ func (s *Server) handleSaveCustomer(writer http.ResponseWriter, request *http.Re
 		return
 	}
 	item, err = s.customerSvc.Save(request.Context(), item)
+	if err != nil {
+		log.Print(err)
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleRemoveCustomerByID(writer http.ResponseWriter, request *http.Request) {
+	//idParam := request.URL.Query().Get("id")
+	idParam, ok := mux.Vars(request)["id"]
+	if !ok {
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		log.Print(err)
+	}
+
+	err = s.customerSvc.RemoveByID(request.Context(), int(id))
+	if errors.Is(err, customers.ErrNotFound) {
+		http.Error(writer, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Успешный ответ, без содержимого, только статус
+	writer.WriteHeader(http.StatusNoContent)
+
 }
