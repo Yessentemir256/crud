@@ -4,18 +4,25 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Yessentemir256/crud/pkg/customers"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"strconv"
 )
 
+const (
+	GET    = "GET"
+	POST   = "POST"
+	DELETE = "DELETE"
+)
+
 // Server представляет собой логический сервер нашего приложения.
 type Server struct {
-	mux         *http.ServeMux
+	mux         *mux.Router
 	customerSvc *customers.Service
 }
 
-func NewServer(mux *http.ServeMux, customersSvc *customers.Service) *Server {
+func NewServer(mux *mux.Router, customersSvc *customers.Service) *Server {
 	return &Server{mux: mux, customerSvc: customersSvc}
 }
 
@@ -25,14 +32,23 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 // Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
-	s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
-	s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
-	s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
+	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
+	s.mux.HandleFunc("/customers/{id}", s.handleGetCustomerByID).Methods(GET)
+	s.mux.HandleFunc("/customers", s.handleSaveCustomer).Methods(POST)
+	s.mux.HandleFunc("/customers/{id}", s.handleRemoveCustomerByID).Methods(DELETE)
+	//s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
+	//s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
+	//s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
 
 }
 
 func (s *Server) handleGetCustomerByID(writer http.ResponseWriter, request *http.Request) {
-	idParam := request.URL.Query().Get("id")
+	//idParam := request.URL.Query().Get("id")
+	idParam, ok := mux.Vars(request)["id"]
+	if !ok {
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
@@ -61,37 +77,6 @@ func (s *Server) handleGetCustomerByID(writer http.ResponseWriter, request *http
 	}
 }
 
-func (s *Server) handleSaveCustomer(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodPost {
-		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	name := request.FormValue("name")
-	phone := request.FormValue("phone")
-	idParam := request.FormValue("id")
-
-	var id int
-	if idParam != "" {
-		var err error
-		id, err = strconv.Atoi(idParam)
-		if err != nil {
-			http.Error(writer, "Invalid ID", http.StatusBadRequest)
-			return
-		}
-	}
-
-	err := s.customerSvc.Save(request.Context(), id, name, phone)
-	if err != nil {
-		log.Print(err)
-		http.Error(writer, "Failed to save customer", http.StatusInternalServerError)
-		return
-	}
-
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte("Customer saved successfully"))
-}
-
 func (s *Server) handleGetAllCustomers(writer http.ResponseWriter, request *http.Request) {
 	// Вызов бизнес-логики
 	customers, err := s.customerSvc.GetAll(request.Context())
@@ -114,4 +99,15 @@ func (s *Server) handleGetAllCustomers(writer http.ResponseWriter, request *http
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func (s *Server) handleSaveCustomer(writer http.ResponseWriter, request *http.Request) {
+	var item *customers.Customer
+	err := json.NewDecoder(request.Body).Decode(&item)
+	if err != nil {
+		log.Print(err)
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	item, err = s.customerSvc.Save(request.Context(), item)
 }

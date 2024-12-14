@@ -114,22 +114,23 @@ func (s *Service) GetAllActive(ctx context.Context) ([]*Customer, error) {
 }
 
 // Save создает или обновляет.
-func (s *Service) Save(ctx context.Context, id int, name, phone string) error {
-	if id == 0 {
+func (s *Service) Save(ctx context.Context, item *Customer) (*Customer, error) {
+	if item.ID == 0 {
 		// Создание нового клиента
-		_, err := s.pool.Exec(ctx, `INSERT INTO customers (name, phone) VALUES ($1, $2);`, name, phone)
+		_, err := s.pool.Exec(ctx, `INSERT INTO customers (name, phone) VALUES ($1, $2);`, item.Name, item.Phone)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		// Обновление существующего клиента
-		_, err := s.pool.Exec(ctx, `UPDATE customers SET name = $1, phone = $2 WHERE id = $3;`, name, phone, id)
+		_, err := s.pool.Exec(ctx, `UPDATE customers SET name = $1, phone = $2 WHERE id = $3;`, item.Name, item.Phone, item.ID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	// Возвращаем обновленный объект Customer
+	return item, nil
 }
 
 // RemoveById удаляет пользователя по ID.

@@ -3,6 +3,7 @@ module github.com/Yessentemir256/crud
 go 1.23
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v4 v4.18.3
 	go.uber.org/dig v1.18.0
 )
