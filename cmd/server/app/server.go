@@ -37,6 +37,8 @@ func (s *Server) Init() {
 	s.mux.HandleFunc("/customers", s.handleSaveCustomer).Methods(POST)
 	s.mux.HandleFunc("/customers/{id}", s.handleRemoveCustomerByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/active", s.handleGetAllActive).Methods(GET)
+	s.mux.HandleFunc("/customers/{id}/block", s.handleBlockByID).Methods(POST)
+	s.mux.HandleFunc("/customers/{id}/block", s.handleUnBlockByID).Methods(DELETE)
 	//s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
 	//s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
 	//s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
@@ -168,4 +170,59 @@ func (s *Server) handleGetAllActive(writer http.ResponseWriter, request *http.Re
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func (s *Server) handleBlockByID(writer http.ResponseWriter, request *http.Request) {
+	//idParam := request.URL.Query().Get("id")
+	idParam, ok := mux.Vars(request)["id"]
+	if !ok {
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		log.Print(err)
+	}
+
+	err = s.customerSvc.UnBlockByID(request.Context(), int64(id))
+	if errors.Is(err, customers.ErrNotFound) {
+		http.Error(writer, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Успешный ответ, без содержимого, только статус
+	writer.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleUnBlockByID(writer http.ResponseWriter, request *http.Request) {
+	//idParam := request.URL.Query().Get("id")
+	idParam, ok := mux.Vars(request)["id"]
+	if !ok {
+		http.Error(writer, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		log.Print(err)
+	}
+
+	err = s.customerSvc.UnBlockByID(request.Context(), int64(id))
+	if errors.Is(err, customers.ErrNotFound) {
+		http.Error(writer, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(writer, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// Успешный ответ, без содержимого, только статус
+	writer.WriteHeader(http.StatusNoContent)
+
 }
