@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
-	"log"
-	"net"
-	"net/http"
-	"os"
-	"time"
-
 	"github.com/Yessentemir256/crud/cmd/server/app"
 	"github.com/Yessentemir256/crud/pkg/customers"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/dig"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"time"
 )
 
 func main() {
