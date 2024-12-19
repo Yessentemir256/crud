@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"github.com/Yessentemir256/crud/cmd/server/app/middleware"
 	"github.com/Yessentemir256/crud/pkg/customers"
 	"github.com/gorilla/mux"
 	"log"
@@ -39,10 +40,12 @@ func (s *Server) Init() {
 	s.mux.HandleFunc("/customers/active", s.handleGetAllActive).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleBlockByID).Methods(POST)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleUnBlockByID).Methods(DELETE)
+
+	s.mux.Use(middleware.Logger) // использование middleware
+
 	//s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
 	//s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
 	//s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
-
 }
 
 func (s *Server) handleGetCustomerByID(writer http.ResponseWriter, request *http.Request) {
