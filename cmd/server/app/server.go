@@ -33,9 +33,12 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 // Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
+	// Применяем middleware для проверки заголовка Content-Type
+	chMd := middleware.CheckHeader("Content-Type", "application/json")
+	s.mux.Handle("/customers", chMd(http.HandlerFunc(s.handleSaveCustomer))).Methods(POST) // убрали старый хендлер и добавили с middleware
+
 	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}", s.handleGetCustomerByID).Methods(GET)
-	s.mux.HandleFunc("/customers", s.handleSaveCustomer).Methods(POST)
 	s.mux.HandleFunc("/customers/{id}", s.handleRemoveCustomerByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/active", s.handleGetAllActive).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleBlockByID).Methods(POST)
