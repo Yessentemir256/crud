@@ -37,6 +37,20 @@ type Customer struct {
 	Created time.Time `json:"created"`
 }
 
+// Managers представляет информацию о менеджерах.
+type Managers struct {
+	ID         int64     `json:"id"`
+	Name       string    `json:"name"`
+	Salary     int64     `json:"salary"`
+	Plan       int64     `json:"plan"`
+	BossID     int64     `json:"boss_id"`
+	Department string    `json:"department"`
+	Active     bool      `json:"active"`
+	Created    time.Time `json:"created"`
+	Login      string    `json:"login"`
+	Password   string    `json:"password"`
+}
+
 // ByID возвращает покупателя по идентификатору.
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
