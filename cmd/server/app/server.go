@@ -37,6 +37,7 @@ func (s *Server) Init() {
 	chMd := middleware.CheckHeader("Content-Type", "application/json")
 	s.mux.Handle("/customers", chMd(http.HandlerFunc(s.handleSaveCustomer))).Methods(POST) // убрали старый хендлер и добавили с middleware
 
+	s.mux.Use(middleware.Basic(s.customerSvc.Auth))
 	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}", s.handleGetCustomerByID).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}", s.handleRemoveCustomerByID).Methods(DELETE)
