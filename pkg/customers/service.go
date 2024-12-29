@@ -37,6 +37,20 @@ type Customer struct {
 	Created time.Time `json:"created"`
 }
 
+// Managers представляет информацию о менеджерах.
+type Managers struct {
+	ID         int64     `json:"id"`
+	Name       string    `json:"name"`
+	Salary     int64     `json:"salary"`
+	Plan       int64     `json:"plan"`
+	BossID     int64     `json:"boss_id"`
+	Department string    `json:"department"`
+	Active     bool      `json:"active"`
+	Created    time.Time `json:"created"`
+	Login      string    `json:"login"`
+	Password   string    `json:"password"`
+}
+
 // ByID возвращает покупателя по идентификатору.
 func (s *Service) ByID(ctx context.Context, id int64) (*Customer, error) {
 	item := &Customer{}
@@ -181,7 +195,7 @@ func (s *Service) BlockByID(ctx context.Context, id int64) error {
 
 }
 
-// Выставляет статус active по ID .
+// UnBlockByID Выставляет статус active по ID .
 func (s *Service) UnBlockByID(ctx context.Context, id int64) error {
 	item, err := s.ByID(ctx, id)
 	if err != nil {
@@ -212,4 +226,14 @@ func (s *Service) UnBlockByID(ctx context.Context, id int64) error {
 
 	return nil
 
+}
+
+func (s *Service) Auth(ctx context.Context, login, password string) bool {
+	var storedPassword string
+	// Выполняем запрос к базе данных с переданным контекстом
+	err := s.pool.QueryRow(ctx, "SELECT password FROM managers WHERE login = $1", login).Scan(&storedPassword)
+	if err != nil {
+		return false // Пользователь не найден
+	}
+	return password == storedPassword // Сравнение паролей
 }

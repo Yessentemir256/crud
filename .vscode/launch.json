@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Program",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/server/main.go",
+            "args": ["arg1", "arg2"], // Если нужно передать аргументы в программу
+            "env": {
+                "MY_ENV_VAR": "value" // Если нужны переменные окружения
+            }
+        }
+    ]
+}

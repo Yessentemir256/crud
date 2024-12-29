@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"github.com/Yessentemir256/crud/cmd/server/app/middleware"
 	"github.com/Yessentemir256/crud/pkg/customers"
 	"github.com/gorilla/mux"
 	"log"
@@ -32,17 +33,23 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 // Init инициализирует сервер (регистрирует все Handler'ы)
 func (s *Server) Init() {
+	// Применяем middleware для проверки заголовка Content-Type
+	chMd := middleware.CheckHeader("Content-Type", "application/json")
+	s.mux.Handle("/customers", chMd(http.HandlerFunc(s.handleSaveCustomer))).Methods(POST) // убрали старый хендлер и добавили с middleware
+
+	s.mux.Use(middleware.Basic(s.customerSvc.Auth))
 	s.mux.HandleFunc("/customers", s.handleGetAllCustomers).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}", s.handleGetCustomerByID).Methods(GET)
-	s.mux.HandleFunc("/customers", s.handleSaveCustomer).Methods(POST)
 	s.mux.HandleFunc("/customers/{id}", s.handleRemoveCustomerByID).Methods(DELETE)
 	s.mux.HandleFunc("/customers/active", s.handleGetAllActive).Methods(GET)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleBlockByID).Methods(POST)
 	s.mux.HandleFunc("/customers/{id}/block", s.handleUnBlockByID).Methods(DELETE)
+
+	s.mux.Use(middleware.Logger) // использование middleware
+
 	//s.mux.HandleFunc("/customers.getById", s.handleGetCustomerByID)
 	//s.mux.HandleFunc("/customers.save", s.handleSaveCustomer) // Новый обработчик
 	//s.mux.HandleFunc("/customers.getAll", s.handleGetAllCustomers)
-
 }
 
 func (s *Server) handleGetCustomerByID(writer http.ResponseWriter, request *http.Request) {
